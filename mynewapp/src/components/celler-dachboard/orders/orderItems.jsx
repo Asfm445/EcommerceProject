@@ -1,11 +1,29 @@
 import React, { memo, useEffect, useState } from "react";
 import styled from "../../../styles/pages/seller-dashboard.module.css";
+import api from "../../../api";
+import { checkIsAuthorized } from "../../../authrize";
+import { useNavigate } from "react-router-dom";
 
 function OrderItem({ item }) {
   const [status,setStatus]=useState(item.status)
-  useEffect(()=>{
-    item.status=status
-  },[status])
+  const navigate=useNavigate();
+    async function handleStatusChange(tempStatus){
+      let isAuthorized=await checkIsAuthorized();
+      if(!isAuthorized){
+        navigate("/login")
+        return
+      }
+      try{
+        let res= await api.patch('api/orderforseller/',{id:item.id,status:tempStatus})
+        if(res.status==202){
+          setStatus(tempStatus)
+          item.status=tempStatus
+        }
+      }catch(error){
+        console.log(error)
+      }
+      
+    }
   return (
     <div className={styled["order-item"]} key={item.id}>
       <div className={styled["item-image-container"]}>
@@ -32,8 +50,7 @@ function OrderItem({ item }) {
             className={styled["ship-button"]}
             disabled={status !== "P"}
             onClick={()=>{
-              console.log(status)
-              setStatus('S')
+              handleStatusChange('S')
             }}
           >
             Ship
@@ -42,7 +59,7 @@ function OrderItem({ item }) {
             className={styled["deliver-button"]}
             disabled={status !== "S"}
             onClick={()=>{
-              setStatus("D")
+              handleStatusChange("D")
             }}
           >
             Deliver
