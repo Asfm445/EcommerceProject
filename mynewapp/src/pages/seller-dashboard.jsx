@@ -89,6 +89,30 @@ function SellerDashboard() {
       console.log(error);
     }
   }
+  async function handleDeleteButton(productId) {
+    console.log(productId)
+    let isAuthorized = await checkIsAuthorized();
+    if (!isAuthorized) {
+      navigate("/login");
+      return;
+    }
+    let ob = { productId: productId }
+    console.log(ob)
+    try {
+      let res = await api.delete(`api/delete/product/?productId=${productId}`)
+      if (res.status == 204) {
+        setProducts((prev) => {
+          return (prev.filter((e) => {
+            if (e.id != productId) {
+              return e
+            }
+          }))
+        })
+      }
+    } catch (error) {
+      alert(error)
+    }
+  }
   return (
     <div className={styled["seller-dashboard"]}>
       {/* Header */}
@@ -118,7 +142,7 @@ function SellerDashboard() {
           <>
             {/* Add Product Form */}
             <ProductForm onSubmit={handleOnSubmit}></ProductForm>
-            <Products products={products}></Products>
+            <Products products={products} handleDeleteButton={handleDeleteButton}></Products>
           </>
         )}
 

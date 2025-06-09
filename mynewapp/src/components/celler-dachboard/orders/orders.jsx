@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo } from "react";
 import styled from "../../../styles/pages/seller-dashboard.module.css";
 import OrderItem from "./orderItems.jsx";
 function Orders({ orders }) {
@@ -31,4 +31,4 @@ function Orders({ orders }) {
   );
 }
 
-export default Orders;
+export default memo(Orders);

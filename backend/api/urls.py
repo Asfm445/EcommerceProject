@@ -10,4 +10,5 @@ urlpatterns = [
     path("orderforseller/", views.orderForSeller.as_view()),
     path("types/<int:id>/", views.TypeListView.as_view()),
     path("catagories/", views.catagoryListView.as_view()),
+    path("delete/product/", views.productDelete.as_view()),
 ]

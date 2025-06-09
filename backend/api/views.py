@@ -81,6 +81,24 @@ class productCreateListView(generics.ListCreateAPIView):
                 return Response(serializer.errors)
 
 
+class productDelete(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request):
+        product_id = request.query_params.get("productId")
+        print(product_id)
+        if product_id:
+            product = Product.objects.get(id=product_id, owner=request.user)
+            if product:
+                product.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        return Response(
+            {"message": "you have to provide productId"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+
 class AddToCart(APIView):
     permission_classes = [IsAuthenticated]
 

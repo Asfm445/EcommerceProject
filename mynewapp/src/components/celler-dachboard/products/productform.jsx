@@ -23,7 +23,7 @@ function ProductForm({ product, onSubmit, onCancel }) {
   const [customType, setCustomType] = useState("");
   const [isCustomType, setIsCustomType] = useState(false);
 
-  const selectedCategory = catagories.find((cat) => cat.name === category);
+  const selectedCategory = catagories.find((cat) => cat.id === category);
   const [types, setTypes] = useState([]);
 
   useEffect(() => {
@@ -90,7 +90,7 @@ function ProductForm({ product, onSubmit, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const selectedCategory = catagories.find((cat) => cat.name === category);
+    const selectedCategory = catagories.find((cat) => cat.id === category);
 
     // Validation
     if (!name.trim()) {

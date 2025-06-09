@@ -3,7 +3,7 @@ import styled from "../../../styles/pages/seller-dashboard.module.css";
 import ProductForm from "./productform.jsx";
 import { Modal, Box } from "@mui/material";
 
-function Products({ products }) {
+function Products({ products,handleDeleteButton }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -44,7 +44,9 @@ function Products({ products }) {
             >
               Edit
             </button>
-            <button className={styled["delete-button"]}>Delete</button>
+            <button className={styled["delete-button"]} onClick={()=>{
+              handleDeleteButton(product.id)
+            }}>Delete</button>
           </div>
         </div>
       ))}
