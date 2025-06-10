@@ -1,5 +1,5 @@
 import React from "react";
-import Navbar from "../components/amazon/header";
+import Navbar from "../components/amazon/header/header";
 import { Link } from "react-router-dom";
 import '../styles/pages/tracking.css'
 function Tracking() {

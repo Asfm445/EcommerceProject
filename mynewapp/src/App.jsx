@@ -10,6 +10,7 @@ import Register from "./pages/register";
 import { CartContextProvider } from "./data/cart-quantity";
 import { OrderContextProvider } from "./data/order-context";
 import SellerDashboard from "./pages/seller-dashboard";
+import Profile from "./pages/profile";
 function App() {
   return (
     <>
@@ -53,6 +54,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/profile" element={<Profile></Profile>}/>
       </Routes>
     </>
   );

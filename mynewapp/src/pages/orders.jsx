@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import Navbar from "../components/amazon/header";
+import Navbar from "../components/amazon/header/header";
 import ProductOrders from "../components/orders/orders";
 import { CircularProgress } from "@mui/material";
 import OrderContext from "../data/order-context";

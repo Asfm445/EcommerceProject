@@ -104,3 +104,12 @@ class OrderItem(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     status = models.CharField(max_length=1, choices=STATUS_CHOICES, default="P")
+
+
+class Profile(models.Model):
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    location = models.URLField()
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, related_name="user_profile"
+    )

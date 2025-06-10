@@ -1,7 +1,7 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from .models import Cart, CartItem, Order, OrderItem, Product, Type, catagory
+from .models import Cart, CartItem, Order, OrderItem, Product, Profile, Type, catagory
 
 
 class userSerializer(serializers.ModelSerializer):
@@ -92,3 +92,9 @@ class CatagorySerializer(serializers.ModelSerializer):
     class Meta:
         model = catagory
         fields = "__all__"
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        field = "__all__"

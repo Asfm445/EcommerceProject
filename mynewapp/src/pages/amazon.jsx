@@ -1,5 +1,5 @@
 import React from "react";
-import Navbar from "../components/amazon/header";
+import Navbar from "../components/amazon/header/header";
 import styles from "../styles/pages/amazon.module.css";
 import "../styles/shared/general.css";
 import Products from "../components/amazon/products";
@@ -9,13 +9,7 @@ function Amazon() {
   return (
     <>
       <CartContextProvider>
-        <Navbar>
-          <div className={styles["main"]}>
-            <div className={styles["products-grid"]}>
-              <Products></Products>
-            </div>
-          </div>
-        </Navbar>
+        <Products></Products>
       </CartContextProvider>
     </>
   );

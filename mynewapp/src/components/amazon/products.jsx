@@ -2,6 +2,8 @@ import React, { useContext, useEffect, useState } from "react";
 import api from "../../api.js";
 import Product from "./product";
 import { CircularProgress } from "@mui/material";
+import Navbar from "./header/header.jsx";
+import styles from "../../styles/pages/amazon.module.css";
 
 function Products() {
   const [products, setProducts] = useState([]);
@@ -31,9 +33,15 @@ function Products() {
       <CircularProgress></CircularProgress>{" "}
     </div>
   ) : (
-    products.map((product, i) => (
-      <Product product={product} i={i} key={i}></Product>
-    ))
+    <Navbar setLoading={setLoading} setProducts={setProducts}>
+      <div className={styles["main"]}>
+        <div className={styles["products-grid"]}>
+          {products.map((product, i) => (
+            <Product product={product} i={i} key={i}></Product>
+          ))}
+        </div>
+      </div>
+    </Navbar>
   );
 }
 

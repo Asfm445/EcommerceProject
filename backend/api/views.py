@@ -13,6 +13,7 @@ from .serializer import (
     OrderItemSerializer,
     OrderSerializer,
     ProductSerializer,
+    ProfileSerializer,
     TypeSerializer,
     userSerializer,
 )
@@ -37,7 +38,14 @@ class productListView(generics.ListAPIView):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        return Product.objects.all()
+        type_id = self.request.query_params.get("type_id")
+        queryset = Product.objects.all()
+        print(type_id)
+        if type_id:
+            queryset = queryset.filter(type__id=type_id)
+        for i in queryset:
+            print(i.type.id)
+        return queryset
 
 
 class productCreateListView(generics.ListCreateAPIView):
@@ -236,8 +244,8 @@ class orderForSeller(APIView):
 
 class TypeListView(generics.ListAPIView):
     serializer_class = TypeSerializer
-
     permission_classes = [AllowAny]
+    authentication_classes = [SessionAuthentication]
 
     def get_queryset(self):
         id = self.kwargs["id"]
@@ -250,3 +258,11 @@ class catagoryListView(generics.ListAPIView):
 
     def get_queryset(self):
         return catagory.objects.all()
+
+
+class createProfile(generics.CreateAPIView):
+    serializer_class = ProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        return super().perform_create(serializer)
