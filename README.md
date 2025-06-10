@@ -20,10 +20,12 @@ Designed a comprehensive full-stack ecommerce application that facilitates essen
 
 ## Features
 
-- User authentication (registration and login)
-- CRUD operations for products,cart and orders
-- Responsive design
-- User-friendly interface
+ -User registration and authentication for both buyers and sellers</li>
+ -Product upload functionality for sellers</li>
+ -Shopping cart management for users</li>
+ -Order placement and tracking</li>
+ -Responsive design for optimal user experience across devices</li>
+ -Admin dashboard for managing products and orders</li>
 
 ## Technologies Used
 
