@@ -39,26 +39,26 @@ class productListView(generics.ListAPIView):
 
     def get_queryset(self):
         type_id = self.request.query_params.get("type_id")
-        queryset = Product.objects.all()
-        print(type_id)
+        queryset = Product.objects.filter(stock_quantity__gt=0)
         if type_id:
             queryset = queryset.filter(type__id=type_id)
-        for i in queryset:
-            print(i.type.id)
         return queryset
 
 
-class productCreateListView(generics.ListCreateAPIView):
+class productCreateListView(generics.GenericAPIView):
     serializer_class = ProductSerializer
 
     permission_classes = [IsAuthenticated]
 
-    def get_queryset(self):
-        user = self.request.user
-        return Product.objects.filter(owner=user)
+    def get(self, request):
+        user = request.user
+        products = Product.objects.filter(owner=user)
+        # print(products)
+        serializer = self.get_serializer(products, many=True)
+        return Response(serializer.data)
 
-    def perform_create(self, serializer):
-        data = self.request.data
+    def post(self, request):
+        data = request.data
         with transaction.atomic():
             if "typeId" in data:
                 if Type.objects.filter(id=data["typeId"]).exists():
@@ -80,7 +80,7 @@ class productCreateListView(generics.ListCreateAPIView):
                     {"message": "you must provide type"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
-
+            serializer = self.get_serializer(data=data)
             if serializer.is_valid():
                 serializer.save(owner=self.request.user, type=type)
                 return Response(status=status.HTTP_201_CREATED)
@@ -88,9 +88,41 @@ class productCreateListView(generics.ListCreateAPIView):
                 # print(serializer.errors)
                 return Response(serializer.errors)
 
+    def patch(self, request):
+        data = request.data
+        print(data)
+        with transaction.atomic():
+            if "typeId" in data:
+                if Type.objects.filter(id=data["typeId"]).exists():
+                    type = Type.objects.get(id=data["typeId"])
+                else:
+                    return Response(status=status.HTTP_404_NOT_FOUND)
+            elif "catagoryId" in data and "typeName" in data:
+                if catagory.objects.filter(id=data["catagoryId"]).exists():
+                    type_catagory = catagory.objects.get(id=data["catagoryId"])
+                    type = Type(catagory=type_catagory, name=data["typeName"])
+                    type.save()
+                else:
+                    return Response(
+                        {"message": "catagory does not exist"},
+                        status=status.HTTP_404_NOT_FOUND,
+                    )
+            else:
+                type = None
+            obj = Product.objects.get(id=data["id"])
+            serializer = self.get_serializer(obj, data=data, partial=True)
+            print(serializer)
+            if serializer.is_valid():
+                print("sjhghgfhdgfdh")
+                if type:
+                    serializer.save(type=type)
+                else:
+                    serializer.save()
 
-class productDelete(APIView):
-    permission_classes = [IsAuthenticated]
+                return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+            else:
+                # print(serializer.errors)
+                return Response(serializer.errors)
 
     def delete(self, request):
         product_id = request.query_params.get("productId")
@@ -120,37 +152,53 @@ class AddToCart(APIView):
         return Response(serilizer.data)
 
     def post(self, request):
-        data = request.data
-        if Cart.objects.filter(owner=request.user).exists():
-            cart = Cart.objects.get(owner=request.user)
-        else:
-            cart = Cart(owner=request.user)
-            cart.save()
-        if "quantity" in data:
-            quantity = data["quantity"]
-        else:
-            quantity = 1
-        if "productId" not in data:
+        with transaction.atomic():
+            data = request.data
+            if Cart.objects.filter(owner=request.user).exists():
+                cart = Cart.objects.get(owner=request.user)
+            else:
+                cart = Cart(owner=request.user)
+                cart.save()
+            if "quantity" in data:
+                quantity = data["quantity"]
+            else:
+                quantity = 1
+            if "productId" not in data:
+                return Response(
+                    {"nessage": "the data should contain product id"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if Product.objects.filter(id=data["productId"]).exists():
+                prod = Product.objects.get(id=data["productId"])
+                if CartItem.objects.filter(product=prod, cart=cart).exists():
+                    cart_item = CartItem.objects.get(product=prod, cart=cart)
+                    if prod.stock_quantity < quantity - cart_item.quantity:
+                        return Response(
+                            {"message": "there is not enough stock"},
+                            status=status.HTTP_400_BAD_REQUEST,
+                        )
+                    prod.substract_stock(quantity - cart_item.quantity)
+                    prod.save()
+                    cart_item.quantity = quantity
+                    cart_item.save()
+                    return Response(
+                        {"message": "cart is updated"}, status=status.HTTP_202_ACCEPTED
+                    )
+                if prod.stock_quantity < quantity:
+                    return Response(
+                        {"message": "there is not enough stock"},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                prod.substract_stock(quantity)
+                prod.save()
+                cart_item = CartItem(product=prod, cart=cart, quantity=quantity)
+                cart_item.save()
+                return Response(status=status.HTTP_202_ACCEPTED)
+
             return Response(
-                {"nessage": "the data should contain product id"},
+                {"message": "product does not exist"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        if Product.objects.filter(id=data["productId"]).exists():
-            prod = Product.objects.get(id=data["productId"])
-            if CartItem.objects.filter(product=prod, cart=cart).exists():
-                cart_item = CartItem.objects.get(product=prod, cart=cart)
-                cart_item.quantity = quantity
-                cart_item.save()
-                return Response(
-                    {"message": "cart is updated"}, status=status.HTTP_202_ACCEPTED
-                )
-            cart_item = CartItem(product=prod, cart=cart, quantity=quantity)
-            cart_item.save()
-            return Response(status=status.HTTP_202_ACCEPTED)
-
-        return Response(
-            {"message": "product does not exist"}, status=status.HTTP_400_BAD_REQUEST
-        )
 
     def delete(self, request):
         data = request.data

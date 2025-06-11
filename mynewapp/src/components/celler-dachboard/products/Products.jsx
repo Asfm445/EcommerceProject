@@ -2,11 +2,14 @@ import React, { useState } from "react";
 import styled from "../../../styles/pages/seller-dashboard.module.css";
 import ProductForm from "./productform.jsx";
 import { Modal, Box } from "@mui/material";
+import api from "../../../api.js";
+import { checkIsAuthorized } from "../../../authrize.js";
+import { useNavigate } from "react-router-dom";
 
-function Products({ products,handleDeleteButton }) {
+function Products({ products, handleDeleteButton, setProducts }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const navigate = useNavigate();
   const handleEdit = (product) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
@@ -17,8 +20,35 @@ function Products({ products,handleDeleteButton }) {
     setIsModalOpen(false);
   };
 
-  const handleFormSubmit = (formData) => {
-    console.log("Updated Product Data:", formData);
+  const handleFormSubmit = async (data) => {
+    console.log("Updated Product Data:", data);
+    let formData = new FormData();
+    formData.append("id", selectedProduct.id);
+    for (const key in data) {
+      console.log(key == "image");
+      if (key != "image" || typeof data[key] != "string")
+        formData.append(key, data[key]);
+    }
+
+    try {
+      let config = {};
+      config.headers = { "Content-Type": "multipart/form-data" };
+      let res = await api.patch("api/myproducts/", formData, config);
+      console.log(res);
+      if (res.status == 202) {
+        console.log(selectedProduct);
+        setProducts((prev) => {
+          return prev.map((product) => {
+            if (product.id == selectedProduct.id) {
+              return res.data;
+            }
+            return product;
+          });
+        });
+      }
+    } catch (error) {
+      console.log(error);
+    }
     handleCloseModal();
   };
 
@@ -36,17 +66,35 @@ function Products({ products,handleDeleteButton }) {
           <div className={styled["product-details"]}>
             <h3 className={styled["product-name"]}>{product.name}</h3>
             <p className={styled["product-price"]}>${product.price}</p>
+            <p>stock quantity {product.stock_quantity}</p>
           </div>
           <div className={styled["product-actions"]}>
             <button
               className={styled["edit-button"]}
-              onClick={() => handleEdit(product)}
+              onClick={async () => {
+                let isAuthorized = await checkIsAuthorized();
+                if (!isAuthorized) {
+                  navigate("/login");
+                  return;
+                }
+                handleEdit(product);
+              }}
             >
               Edit
             </button>
-            <button className={styled["delete-button"]} onClick={()=>{
-              handleDeleteButton(product.id)
-            }}>Delete</button>
+            <button
+              className={styled["delete-button"]}
+              onClick={async () => {
+                let isAuthorized = await checkIsAuthorized();
+                if (!isAuthorized) {
+                  navigate("/login");
+                  return;
+                }
+                handleDeleteButton(product.id);
+              }}
+            >
+              Delete
+            </button>
           </div>
         </div>
       ))}

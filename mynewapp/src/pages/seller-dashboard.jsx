@@ -54,7 +54,7 @@ function SellerDashboard() {
     fetchProducts();
   }, []);
   async function handleOnSubmit(data) {
-    console.log(data);
+    console.log(typeof data.image);
     // Convert plain object to FormData if there's an image (file)
     let formData;
     if (data.image) {
@@ -62,6 +62,7 @@ function SellerDashboard() {
       for (const key in data) {
         formData.append(key, data[key]);
       }
+      // console.log(formData);
     }
 
     let isAuthorized = await checkIsAuthorized();
@@ -90,27 +91,25 @@ function SellerDashboard() {
     }
   }
   async function handleDeleteButton(productId) {
-    console.log(productId)
+    console.log(productId);
     let isAuthorized = await checkIsAuthorized();
     if (!isAuthorized) {
       navigate("/login");
       return;
     }
-    let ob = { productId: productId }
-    console.log(ob)
     try {
-      let res = await api.delete(`api/delete/product/?productId=${productId}`)
+      let res = await api.delete(`api/myproducts/?productId=${productId}`);
       if (res.status == 204) {
         setProducts((prev) => {
-          return (prev.filter((e) => {
+          return prev.filter((e) => {
             if (e.id != productId) {
-              return e
+              return e;
             }
-          }))
-        })
+          });
+        });
       }
     } catch (error) {
-      alert(error)
+      alert(error);
     }
   }
   return (
@@ -142,7 +141,11 @@ function SellerDashboard() {
           <>
             {/* Add Product Form */}
             <ProductForm onSubmit={handleOnSubmit}></ProductForm>
-            <Products products={products} handleDeleteButton={handleDeleteButton}></Products>
+            <Products
+              products={products}
+              setProducts={setProducts}
+              handleDeleteButton={handleDeleteButton}
+            ></Products>
           </>
         )}
 
