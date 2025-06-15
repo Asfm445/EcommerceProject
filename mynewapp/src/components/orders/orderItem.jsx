@@ -34,7 +34,10 @@ function OrderItem(props) {
       </div>
 
       <div className={styles["product-actions"]}>
-        <Link to={"/tracking"}>
+        <Link
+          to="/tracking"
+          state={{ order: props.order }}
+        >
           <button
             className={`${styles["track-package-button"]} ${styles["button-secondary"]}`}
           >

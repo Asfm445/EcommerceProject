@@ -6,7 +6,17 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .models import Cart, CartItem, Order, OrderItem, Product, Type, catagory
+from .models import (
+    Cart,
+    CartItem,
+    Order,
+    OrderItem,
+    Product,
+    Profile,
+    Type,
+    catagory,
+    shop,
+)
 from .serializer import (
     CartSerializer,
     CatagorySerializer,
@@ -14,6 +24,7 @@ from .serializer import (
     OrderSerializer,
     ProductSerializer,
     ProfileSerializer,
+    ShopSerializer,
     TypeSerializer,
     userSerializer,
 )
@@ -52,13 +63,19 @@ class productCreateListView(generics.GenericAPIView):
 
     def get(self, request):
         user = request.user
-        products = Product.objects.filter(owner=user)
-        # print(products)
+        shop_id = self.request.query_params.get("shop_id")
+        if not shop_id:
+            return Response(
+                {"message": "shop must provided"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        products = Product.objects.filter(owner=user, shop__id=shop_id)
         serializer = self.get_serializer(products, many=True)
         return Response(serializer.data)
 
     def post(self, request):
         data = request.data
+        print(data)
         with transaction.atomic():
             if "typeId" in data:
                 if Type.objects.filter(id=data["typeId"]).exists():
@@ -80,9 +97,16 @@ class productCreateListView(generics.GenericAPIView):
                     {"message": "you must provide type"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
+            if "shop_id" in data and shop.objects.filter(id=data["shop_id"]).exists():
+                this_shop = shop.objects.get(id=data["shop_id"])
+            else:
+                return Response(
+                    {"message": "shop not found"}, status=status.HTTP_404_NOT_FOUND
+                )
             serializer = self.get_serializer(data=data)
+            print(serializer)
             if serializer.is_valid():
-                serializer.save(owner=self.request.user, type=type)
+                serializer.save(owner=self.request.user, type=type, shop=this_shop)
                 return Response(status=status.HTTP_201_CREATED)
             else:
                 # print(serializer.errors)
@@ -269,7 +293,14 @@ class orderForSeller(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        queryset = OrderItem.objects.filter(product__owner=request.user)
+        shop_id = request.query_params.get("shop_id")
+        if not shop_id:
+            return Response(
+                {"message": "provide shop id"}, status=status.HTTP_400_BAD_REQUEST
+            )
+        queryset = OrderItem.objects.filter(
+            product__owner=request.user, product__shop__id=shop_id
+        )
         serializer = OrderItemSerializer(queryset, many=True, include_order=True)
         return Response(serializer.data)
 
@@ -314,3 +345,47 @@ class createProfile(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         return super().perform_create(serializer)
+
+
+class profile(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            prof = Profile.objects.get(user=request.user)
+            serializer = ProfileSerializer(prof)
+            return Response(serializer.data)
+        except Exception:
+            return Response(
+                {"message": "profile did not created yet!"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+    def post(self, request):
+        data = request.data
+        usr = request.user
+        serializer = ProfileSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save(user=usr)
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        return Response(serializer.errors)
+
+
+class myshops(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        usr = request.user
+        obj = shop.objects.filter(owner=usr)
+        serializer = ShopSerializer(obj, many=True)
+        return Response(serializer.data)
+
+    def post(self, request):
+        usr = request.user
+        data = request.data
+        serializer = ShopSerializer(data=data)
+        print(serializer)
+        if serializer.is_valid():
+            serializer.save(owner=usr)
+            return Response(serializer.data, status=status.HTTP_202_ACCEPTED)
+        return Response(serializer.errors)

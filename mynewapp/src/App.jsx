@@ -11,6 +11,7 @@ import { CartContextProvider } from "./data/cart-quantity";
 import { OrderContextProvider } from "./data/order-context";
 import SellerDashboard from "./pages/seller-dashboard";
 import Profile from "./pages/profile";
+import ShopForm from "./pages/createshop";
 function App() {
   return (
     <>
@@ -55,6 +56,7 @@ function App() {
           }
         />
         <Route path="/profile" element={<Profile></Profile>}/>
+        <Route path="/createshop" element={<ShopForm></ShopForm>}></Route>
       </Routes>
     </>
   );

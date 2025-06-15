@@ -10,4 +10,6 @@ urlpatterns = [
     path("orderforseller/", views.orderForSeller.as_view()),
     path("types/<int:id>/", views.TypeListView.as_view()),
     path("catagories/", views.catagoryListView.as_view()),
+    path("profile/", views.profile.as_view()),
+    path("myshops/", views.myshops.as_view()),
 ]

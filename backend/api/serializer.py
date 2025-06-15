@@ -1,7 +1,17 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
 
-from .models import Cart, CartItem, Order, OrderItem, Product, Profile, Type, catagory
+from .models import (
+    Cart,
+    CartItem,
+    Order,
+    OrderItem,
+    Product,
+    Profile,
+    Type,
+    catagory,
+    shop,
+)
 
 
 class userSerializer(serializers.ModelSerializer):
@@ -18,7 +28,7 @@ class userSerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ["id", "name", "image", "price", "stock_quantity", "type"]
+        fields = ["id", "name", "image", "price", "stock_quantity", "type", "shop"]
         # extra_kwargs = {"owner": {"write_only": True}}\
         depth = 1
 
@@ -97,4 +107,14 @@ class CatagorySerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
-        field = "__all__"
+        fields = "__all__"
+        extra_kwargs = {"user": {"read_only": True}}
+
+
+class ShopSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = shop
+        fields = "__all__"
+        extra_kwargs = {"owner": {"read_only": True}}
+
+    # del_price_per_km = serializers.FloatField(required=False)

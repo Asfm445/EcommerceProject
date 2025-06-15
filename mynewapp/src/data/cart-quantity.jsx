@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { checkIsAuthorized } from "../authrize";
 import { useNavigate } from "react-router-dom";
 import api from "../api.js";
+import Error from "../components/erroAndMessage.jsx";
 // import { find } from "../scripts/utilitis/filter.js";
 
 const CartContext = React.createContext({
@@ -9,9 +10,11 @@ const CartContext = React.createContext({
   setCartProducts: () => {},
   handleCartChange: () => {},
   deleteFromCart: () => {},
+  error:'',
 });
 
 export const CartContextProvider = (props) => {
+  const [error,setError]=useState('')
   const [cartProducts, setCartProducts] = useState([]);
   useEffect(() => {
     async function getCartData() {
@@ -25,9 +28,11 @@ export const CartContextProvider = (props) => {
           setCartProducts(res.data.items);
         } else if (res.status == 404) {
           setCartProducts([]);
+        }else if(res.status==400){
+          setError(res.data.message)
         }
       } catch (error) {
-        console.log(error);
+        console.log(error.data.message)
       }
     }
     getCartData();
@@ -99,14 +104,11 @@ export const CartContextProvider = (props) => {
         } else {
           addToCart(product, itemQuantity);
         }
-      } else if (res.status == 401) {
-        navigate("/login");
-        return;
       } else {
         console.log(res.data.message);
       }
     } catch (error) {
-      console.error(error);
+      setError(error.response.data.message);
     }
   }
   function check() {
@@ -121,8 +123,10 @@ export const CartContextProvider = (props) => {
         handleCartChange: handleCartChange,
         deleteFromCart: deleteFromCart,
         check: check,
+        error:error,
       }}
     >
+      {error && <Error message={error} />}
       {props.children}
     </CartContext.Provider>
   );

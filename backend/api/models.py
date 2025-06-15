@@ -25,6 +25,19 @@ class Type(models.Model):
         return self.name
 
 
+class shop(models.Model):
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="myshops")
+    shop_name = models.CharField(max_length=100)
+    loc_latitude = models.FloatField()
+    loc_longitude = models.FloatField()
+    loc_description = models.CharField(max_length=500, blank=True, null=True)
+    delivery_support = models.BooleanField(default=False)
+    del_price_per_km = models.FloatField(default=0.0)
+
+    def __str__(self):
+        return self.shop_name
+
+
 class Product(models.Model):
     name = models.CharField(max_length=100)
     image = models.ImageField(upload_to=product_image_upload_path)
@@ -36,10 +49,9 @@ class Product(models.Model):
         Type,
         on_delete=models.CASCADE,
         related_name="products",
-        blank=True,
-        null=True,
     )
     stock_quantity = models.IntegerField(default=1)
+    shop = models.ForeignKey(shop, on_delete=models.CASCADE, related_name="products")
 
     def add_stock(self, num=1):
         self.stock_quantity += num
@@ -76,13 +88,15 @@ class Product(models.Model):
 
 
 class Cart(models.Model):
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name="carts")
+    owner = models.OneToOneField(User, on_delete=models.CASCADE, related_name="cart")
     created_at = models.DateTimeField(auto_now_add=True)
 
 
 class CartItem(models.Model):
     cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name="items")
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="cart_items"
+    )
     quantity = models.PositiveIntegerField(default=1)
 
 
@@ -101,7 +115,9 @@ class OrderItem(models.Model):
     order = models.ForeignKey(
         Order, on_delete=models.CASCADE, related_name="order_items"
     )
-    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product = models.ForeignKey(
+        Product, on_delete=models.CASCADE, related_name="orders"
+    )
     quantity = models.PositiveIntegerField()
     status = models.CharField(max_length=1, choices=STATUS_CHOICES, default="P")
 
@@ -109,7 +125,12 @@ class OrderItem(models.Model):
 class Profile(models.Model):
     first_name = models.CharField(max_length=100)
     last_name = models.CharField(max_length=100)
-    location = models.URLField()
-    user = models.OneToOneField(
-        User, on_delete=models.CASCADE, related_name="user_profile"
-    )
+    loc_latitude = models.FloatField()
+    loc_longitude = models.FloatField()
+    loc_description = models.CharField(max_length=500, blank=True, null=True)
+    phone_number = models.CharField(max_length=15, blank=True, null=True)
+    address = models.CharField(max_length=50, blank=True, null=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
+
+    def __str__(self):
+        return f"{self.first_name}  {self.last_name}"
