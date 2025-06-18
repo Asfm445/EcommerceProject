@@ -101,7 +101,7 @@ python manage.py runserver
 
 ## Usage
 
-Once both the frontend and backend servers are running, you can access the application at http://localhost:3000 (frontend) and http://localhost:8000 (backend).
+Once both the frontend and backend servers are running, you can access the application at http://localhost:5173 (frontend) and http://localhost:8000 (backend).
 
 ## API Endpoints
 

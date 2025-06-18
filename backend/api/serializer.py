@@ -14,10 +14,19 @@ from .models import (
 )
 
 
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = "__all__"
+        extra_kwargs = {"user": {"read_only": True}}
+
+
 class userSerializer(serializers.ModelSerializer):
+    profile = ProfileSerializer(read_only=True)
+
     class Meta:
         model = User
-        fields = ["id", "username", "password", "email"]
+        fields = ["id", "username", "password", "email", "profile"]
         extra_kwargs = {"password": {"write_only": True}}
 
     def create(self, validated_data):
@@ -48,33 +57,35 @@ class CartSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+class OrderSerializer2(serializers.ModelSerializer):
+    user = userSerializer(read_only=True)
+
+    class Meta:
+        model = Order
+        fields = "__all__"
+
+
 class OrderItemSerializer(serializers.ModelSerializer):
+    order = serializers.SerializerMethodField()
+
     class Meta:
         model = OrderItem
         fields = ["id", "quantity", "product", "status", "order"]
         depth = 1
 
-    def __init__(self, *args, **kwargs):
-        # Extract 'include_order' from kwargs, default to False
-        self.include_order = kwargs.pop("include_order", False)
-        super().__init__(*args, **kwargs)
+    def get_order(self, obj):
+        # Check if 'include_order' was passed to the serializer
+        include_order = self.context.get("include_order", False)
+        if include_order:
+            return OrderSerializer2(obj.order, context=self.context).data
+        return None
 
     def to_representation(self, instance):
-        # Get the default representation
-        representation = super().to_representation(instance)
-
-        # Conditionally include the 'order' field
-        if not self.include_order:
-            representation.pop("order", None)
-        else:
-            # Optionally customize the 'order' field representation
-            representation["order"] = {
-                "id": instance.order.id,
-                "created_at": instance.order.created_at,
-                "username": instance.order.user.username,
-            }
-
-        return representation
+        rep = super().to_representation(instance)
+        # Remove 'order' if not included
+        if rep.get("order") is None:
+            rep.pop("order", None)
+        return rep
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -102,13 +113,6 @@ class CatagorySerializer(serializers.ModelSerializer):
     class Meta:
         model = catagory
         fields = "__all__"
-
-
-class ProfileSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Profile
-        fields = "__all__"
-        extra_kwargs = {"user": {"read_only": True}}
 
 
 class ShopSerializer(serializers.ModelSerializer):

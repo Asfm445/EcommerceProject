@@ -11,7 +11,7 @@ function Profile() {
   const [info, setInfo] = useState({
     first_name: '',
     last_name: '',
-    phone: '',
+    phone_number: '',
     address: '',
     loc_latitude: '',
     loc_longitude: '',
@@ -67,7 +67,7 @@ function Profile() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validateEthiopianPhone(info.phone)) {
+    if (!validateEthiopianPhone(info.phone_number)) {
       alert("Please enter a valid Ethiopian phone number (Ethio Telecom or Safaricom).");
       return;
     }
@@ -140,7 +140,7 @@ function Profile() {
             fullWidth
             margin="normal"
             label="Phone Number"
-            name="phone"
+            name="phone_number"
             variant="outlined"
             type="tel"
             inputProps={{ maxLength: 15 }}

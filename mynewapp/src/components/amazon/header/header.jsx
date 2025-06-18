@@ -1,14 +1,14 @@
 import React, { useContext, useEffect, useState } from "react";
 import "../../../styles/shared/amazon-header.css";
-import mobileLogo from "../../../images/amazon-mobile-logo-white.png";
 import searchIcon from "../../../images/icons/search-icon.png";
-import amazonLogo from "../../../images/amazon-logo-white.png";
 import cartIcon from "../../../images/icons/cart-icon.png";
 import { Link, useNavigate } from "react-router-dom";
 import CartContext from "../../../data/cart-quantity";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import MenuIcon from "@mui/icons-material/Menu";
 import SideBar from "./sidebar";
+import redAppleLogo from '../../../images/logo/red-apple.png'
+
 import {
   Button,
   Menu,
@@ -59,10 +59,10 @@ function Navbar(props) {
             </IconButton>
           )}
           <Link to={"/"} className="header-logo">
-            <img className="amazon-logo" src={amazonLogo} alt="Amazon Logo" />
+            <img className="amazon-logo" src={redAppleLogo} alt="Amazon Logo" />
             <img
               className="amazon-mobile-logo"
-              src={mobileLogo}
+              src={redAppleLogo}
               alt="Amazon Mobile Logo"
             />
           </Link>

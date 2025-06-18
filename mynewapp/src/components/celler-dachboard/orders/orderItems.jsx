@@ -5,6 +5,7 @@ import { checkIsAuthorized } from "../../../authrize";
 import { useNavigate } from "react-router-dom";
 
 function OrderItem({ item }) {
+  // console.log(item)
   const [status,setStatus]=useState(item.status)
   const navigate=useNavigate();
     async function handleStatusChange(tempStatus){

@@ -2,6 +2,8 @@ import React, { useState, useEffect, memo } from "react";
 import styled from "../../../styles/pages/seller-dashboard.module.css";
 import OrderItem from "./orderItems.jsx";
 function Orders({ orders }) {
+  console.log(orders)
+  
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const toggleOrder = (orderId) => {
     setExpandedOrderId((prev) => (prev === orderId ? null : orderId));

@@ -29,10 +29,27 @@ function SellerDashboard() {
   const [selectedShop, setSelectedShop] = useState("");
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [profile,setprofile]=useState({})
 
   //Fetch shops on mount
   useEffect(() => {
     async function fetchShops() {
+      let isAuthorized=await checkIsAuthorized()
+      if(!isAuthorized){
+        navigate('/login')
+        return
+      }
+      try{
+        let res2=await api.get('api/profile/')
+        if(res2.status==200){
+          setprofile(res2.data)
+          console.log(res2.data)
+        }
+      }catch(error){
+        if(error.status==404){
+          navigate("/profile")
+        }
+      }
       try {
         let res = await api.get("api/myshops/");
         if (res.status === 200 && res.data.length > 0) {
@@ -71,6 +88,7 @@ function SellerDashboard() {
       try {
         let res = await api.get(`api/orderforseller/?shop_id=${selectedShop}`);
         if (res.status === 200) {
+          console.log(res.data)
           setOrders(transform(res.data));
         }
       } catch (error) {

@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from rest_framework import generics, status
 from rest_framework.authentication import SessionAuthentication
+from rest_framework.decorators import api_view
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -301,7 +302,9 @@ class orderForSeller(APIView):
         queryset = OrderItem.objects.filter(
             product__owner=request.user, product__shop__id=shop_id
         )
-        serializer = OrderItemSerializer(queryset, many=True, include_order=True)
+        serializer = OrderItemSerializer(
+            queryset, many=True, context={"include_order": True}
+        )
         return Response(serializer.data)
 
     def patch(self, request):
@@ -337,14 +340,6 @@ class catagoryListView(generics.ListAPIView):
 
     def get_queryset(self):
         return catagory.objects.all()
-
-
-class createProfile(generics.CreateAPIView):
-    serializer_class = ProfileSerializer
-    permission_classes = [IsAuthenticated]
-
-    def perform_create(self, serializer):
-        return super().perform_create(serializer)
 
 
 class profile(APIView):

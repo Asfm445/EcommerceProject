@@ -16,9 +16,9 @@ function Tracking() {
   }
 
   // Example: status and progress logic (customize as needed)
-  const status = order.status || "Preparing"; // or "Shipped", "Delivered"
+  const status = order.status || "P"; // or "Shipped", "Delivered"
   const progressWidth =
-    status === "Preparing" ? "33%" : status === "Shipped" ? "66%" : "100%";
+    status === "P" ? "33%" : status === "S" ? "66%" : "100%";
 
   return (
     <>
