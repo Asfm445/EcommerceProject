@@ -45,9 +45,11 @@ function Navbar(props) {
   const isLargeScreen = useMediaQuery("(min-width:900px)");
 
   const handleDrawerOpen = () => setDrawerOpen(true);
-
+  // if(!props.page){
+  //   setDrawerExpanded(false)
+  // }
   // Add this class to your top-level wrapper
-  const pageClass = isLargeScreen && !drawerExpanded ? "drawer-collapsed" : "";
+  const pageClass = isLargeScreen && !drawerExpanded || !(props.page=='main')? "drawer-collapsed" : "";
 
   return (
     <div className={pageClass}>
@@ -131,7 +133,7 @@ function Navbar(props) {
         </div>
       </div>
       <div className="main-content">{props.children}</div>
-      <SideBar
+      {props.page=='main' &&<SideBar
         isLargeScreen={isLargeScreen}
         drawerExpanded={drawerExpanded}
         drawerOpen={drawerOpen}
@@ -139,7 +141,7 @@ function Navbar(props) {
         setDrawerExpanded={setDrawerExpanded}
         setLoading={props.setLoading}
         setProducts={props.setProducts}
-      ></SideBar>
+      ></SideBar>}
     </div>
   );
 }

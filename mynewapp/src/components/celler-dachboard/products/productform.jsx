@@ -36,7 +36,8 @@ function ProductForm({ product, onSubmit, onCancel }) {
       async function fetchTypes() {
         try {
           const res = await api.get(`/api/types/${category}/`);
-          setTypes(res.data); // Expecting [{id, name}, ...]
+          console.log(res.data.results)
+          setTypes(res.data.results); // Expecting [{id, name}, ...]
         } catch (error) {
           console.log(error);
         }

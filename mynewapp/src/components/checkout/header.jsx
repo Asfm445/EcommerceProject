@@ -17,13 +17,13 @@ function Header() {
           <Link to="/" aria-label="Back to home">
             <img
               className={styles["amazon-logo"]}
-              src="src/images/amazon-logo.png"
-              alt="Amazon Logo"
+              src="src/images/logo/red-apple.png"
+              alt="red-apple"
             />
             <img
               className={styles["amazon-mobile-logo"]}
-              src="src/images/amazon-mobile-logo.png"
-              alt="Amazon Mobile Logo"
+              src="src/images/logo/red-apple.png"
+              alt="red-apple"
             />
           </Link>
         </div>

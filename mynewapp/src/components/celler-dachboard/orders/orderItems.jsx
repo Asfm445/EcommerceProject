@@ -15,7 +15,7 @@ function OrderItem({ item }) {
         return
       }
       try{
-        let res= await api.patch('api/orderforseller/',{id:item.id,status:tempStatus})
+        let res= await api.patch(`api/orderitemforseller/`,{id:item.id,status:tempStatus})
         if(res.status==202){
           setStatus(tempStatus)
           item.status=tempStatus

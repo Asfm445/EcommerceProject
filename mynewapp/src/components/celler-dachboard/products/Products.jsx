@@ -6,6 +6,8 @@ import api from "../../../api.js";
 import { checkIsAuthorized } from "../../../authrize.js";
 import { useNavigate } from "react-router-dom";
 
+const getPageSize = () => (window.innerWidth < 600 ? 2 : 6);
+
 function Products({ products, handleDeleteButton, setProducts }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,7 +35,7 @@ function Products({ products, handleDeleteButton, setProducts }) {
     try {
       let config = {};
       config.headers = { "Content-Type": "multipart/form-data" };
-      let res = await api.patch("api/myproducts/", formData, config);
+      let res = await api.patch(`api/myproducts/?page_size=${getPageSize()}`, formData, config);
       console.log(res);
       if (res.status == 202) {
         console.log(selectedProduct);

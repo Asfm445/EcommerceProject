@@ -104,7 +104,7 @@ function SideBar({
         let res = await api.get(`api/types/${expandedCategory}/`);
         if (res.status == 200) {
           console.log(res.data);
-          setTypes(res.data);
+          setTypes(res.data.results);
         }
       } catch (error) {
         console.log(error);
@@ -120,7 +120,7 @@ function SideBar({
       setLoading(true);
       let res = await api.get(`api/?type_id=${typeId}`);
       if (res.status == 200) {
-        setProducts(res.data);
+        setProducts(res.data.results);
       }
     } catch (error) {
       console.log(error);

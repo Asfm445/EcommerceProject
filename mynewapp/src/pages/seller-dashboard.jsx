@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import api from "../api.js";
-import { transform } from "../components/celler-dachboard/transform.js";
+import {find} from '../scripts/utilitis/filter.js'
 import {
   AppBar,
   Toolbar,
@@ -20,7 +20,6 @@ import Orders from "../components/celler-dachboard/orders/orders.jsx";
 import ProductForm from "../components/celler-dachboard/products/productform.jsx";
 import Products from "../components/celler-dachboard/products/Products.jsx";
 import { useNavigate } from "react-router-dom";
-import ShopForm from "./createshop.jsx";
 
 function SellerDashboard() {
   const navigate = useNavigate();
@@ -30,6 +29,14 @@ function SellerDashboard() {
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [profile,setprofile]=useState({})
+  const [nextProducts, setNextProducts] = useState(null);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [nextOrders, setNextOrders] = useState(null);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+
+  // Add a ref to track initial fetch
+  const initialProductsFetched = useRef(false);
+  const productsFetchLock = useRef(false);
 
   //Fetch shops on mount
   useEffect(() => {
@@ -65,38 +72,147 @@ function SellerDashboard() {
     fetchShops();
   }, []);
 
-  // Fetch products for selected shop
+  // Fetch products for selected shop with pagination
   useEffect(() => {
     if (!selectedShop) return;
-    async function fetchProducts() {
+    let isMounted = true;
+    let nextUrl = `api/myproducts/?shop_id=${selectedShop}`;
+
+    const fetchProducts = async (url, append = false) => {
+      if (loadingProducts) return;
+      setLoadingProducts(true);
       try {
-        let res = await api.get(`api/myproducts/?shop_id=${selectedShop}`);
+        let res = await api.get(url);
         if (res.status === 200) {
-          setProducts(res.data);
+          if (Array.isArray(res.data.results)) {
+            if (isMounted) {
+              setProducts((prev) =>
+                append ? [...prev, ...res.data.results] : res.data.results
+              );
+              setNextProducts(res.data.next);
+              initialProductsFetched.current = true; // Mark as fetched
+            }
+          } else {
+            if (isMounted) {
+              setProducts(res.data);
+              setNextProducts(null);
+              initialProductsFetched.current = true;
+            }
+          }
         }
       } catch (error) {
         console.error("Error fetching products:", error);
       }
-    }
-    fetchProducts();
+      setLoadingProducts(false);
+    };
+
+    // Initial fetch
+    setProducts([]);
+    setNextProducts(null);
+    initialProductsFetched.current = false;
+    fetchProducts(nextUrl);
+
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line
   }, [selectedShop]);
 
-  // Fetch orders for selected shop
+  // Fetch orders for selected shop with pagination
   useEffect(() => {
     if (!selectedShop) return;
-    async function fetchOrders() {
+    let isMounted = true;
+    let nextUrl = `api/orderforseller/?shop_id=${selectedShop}`;
+
+    const fetchOrders = async (url, append = false) => {
+      if (loadingOrders) return;
+      setLoadingOrders(true);
       try {
-        let res = await api.get(`api/orderforseller/?shop_id=${selectedShop}`);
+        let res = await api.get(url);
         if (res.status === 200) {
-          console.log(res.data)
-          setOrders(transform(res.data));
+          if (Array.isArray(res.data.results)) {
+            if (isMounted) {
+              setOrders((prev) =>
+                append ? [...prev, ...res.data.results] : res.data.results
+              );
+              setNextOrders(res.data.next);
+            }
+          } else {
+            if (isMounted) {
+              setOrders(res.data);
+              setNextOrders(null);
+            }
+          }
         }
       } catch (error) {
         console.error("Error fetching orders:", error);
       }
-    }
-    fetchOrders();
+      setLoadingOrders(false);
+    };
+
+    // Initial fetch
+    setOrders([]);
+    setNextOrders(null);
+    fetchOrders(nextUrl);
+
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line
   }, [selectedShop]);
+
+  // Infinite scroll handler for both tabs
+  useEffect(() => {
+    const handleScroll = () => {
+      if (
+        window.innerHeight + window.scrollY >= document.body.offsetHeight - 200
+      ) {
+        if (
+          tabValue === 0 &&
+          nextProducts &&
+          !loadingProducts &&
+          initialProductsFetched.current &&
+          !productsFetchLock.current // prevent duplicate fetches
+        ) {
+          productsFetchLock.current = true; // lock
+          const nextPath =
+            nextProducts.startsWith(window.location.origin)
+              ? nextProducts.replace(window.location.origin + "/", "")
+              : nextProducts;
+          api.get(nextPath).then(res => {
+            if (res.status === 200 && Array.isArray(res.data.results)) {
+              setProducts(prev => {
+                // Filter out duplicates by id
+                const ids = new Set(prev.map(p => p.id));
+                const newProducts = res.data.results.filter(p => !ids.has(p.id));
+                return [...prev, ...newProducts];
+              });
+              setNextProducts(res.data.next);
+            }
+            productsFetchLock.current = false; // unlock
+          }).catch(() => {
+            productsFetchLock.current = false; // unlock on error
+          });
+        } else if (tabValue === 1 && nextOrders && !loadingOrders) {
+          // Orders tab
+          const nextPath =
+            nextOrders.startsWith(window.location.origin)
+              ? nextOrders.replace(window.location.origin + "/", "")
+              : nextOrders;
+          // Fetch next orders page
+          api.get(nextPath).then(res => {
+            if (res.status === 200 && Array.isArray(res.data.results)) {
+              setOrders(prev => [...prev, ...res.data.results]);
+              setNextOrders(res.data.next);
+            }
+          });
+        }
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+    // eslint-disable-next-line
+  }, [tabValue, nextProducts, loadingProducts, nextOrders, loadingOrders]);
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
@@ -218,10 +334,17 @@ function SellerDashboard() {
               products={products}
               setProducts={setProducts}
               handleDeleteButton={handleDeleteButton}
+              loading={loadingProducts}
             />
           </>
         )}
-        {tabValue === 1 && <Orders orders={orders} />}
+        {tabValue === 1 && (
+          <Orders
+            orders={orders}
+            shop={find(selectedShop, shops)}
+            loading={loadingOrders}
+          />
+        )}
       </Box>
     </div>
   );

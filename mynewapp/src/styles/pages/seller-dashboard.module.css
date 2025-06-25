@@ -432,3 +432,77 @@ body {
   border-radius: 4px;
   cursor: pointer;
 }
+
+/* Orders List Container */
+.orders-list-container {
+  padding: 24px;
+  background: #f8f9fa;
+  min-height: 100vh;
+}
+
+/* Individual Order Card */
+.order-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  padding: 24px 20px 18px 20px;
+  margin-bottom: 28px;
+  transition: box-shadow 0.2s;
+  border-left: 5px solid #e53935;
+}
+
+.order-card:hover {
+  box-shadow: 0 4px 24px rgba(229, 57, 53, 0.10);
+}
+
+/* Order Title */
+.order-card .order-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #e53935;
+  margin-bottom: 10px;
+}
+
+/* Buyer Info */
+.order-card .buyer-info {
+  margin-bottom: 10px;
+  font-size: 16px;
+  color: #263238;
+}
+
+.order-card .buyer-info strong {
+  color: #1976d2;
+  font-weight: 600;
+}
+
+/* Distance */
+.order-card .distance-info {
+  margin-bottom: 10px;
+  font-size: 15px;
+  color: #388e3c;
+  font-weight: 600;
+}
+
+/* Items List */
+.order-card .items-list {
+  margin-top: 8px;
+  padding-left: 18px;
+}
+
+.order-card .items-list li {
+  font-size: 15px;
+  color: #263238;
+  margin-bottom: 4px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .order-card {
+    padding: 14px 8px 10px 8px;
+  }
+
+  .orders-list-container {
+    padding: 8px;
+  }
+}
+

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
 import styles from "../../styles/pages/checkout/Checkout.module.css";
 import CartContext from "../../data/cart-quantity.jsx";
 
@@ -41,7 +41,7 @@ function RenderSummeryItem(props) {
                   styles[`quantity-${v.quantity}`]
                 }`}
               >
-                {classes.type ? itemQuantity : ""}
+                {classes.type ? v.quantity : ""}
               </span>
             </span>
             <input

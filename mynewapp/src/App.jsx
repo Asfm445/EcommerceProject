@@ -8,7 +8,6 @@ import ProtectedRoute from "./components/protectedRoute";
 import Login from "./pages/login";
 import Register from "./pages/register";
 import { CartContextProvider } from "./data/cart-quantity";
-import { OrderContextProvider } from "./data/order-context";
 import SellerDashboard from "./pages/seller-dashboard";
 import Profile from "./pages/profile";
 import ShopForm from "./pages/createshop";
@@ -31,9 +30,7 @@ function App() {
           path="/orders"
           element={
             <ProtectedRoute>
-              <OrderContextProvider>
                 <Orders />
-              </OrderContextProvider>
             </ProtectedRoute>
           }
         />

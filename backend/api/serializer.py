@@ -50,53 +50,27 @@ class CartItemSerilizer(serializers.ModelSerializer):
 
 
 class CartSerializer(serializers.ModelSerializer):
-    items = CartItemSerilizer(many=True)
+    # items = CartItemSerilizer(many=True)
 
     class Meta:
         model = Cart
         fields = "__all__"
 
 
-class OrderSerializer2(serializers.ModelSerializer):
-    user = userSerializer(read_only=True)
-
-    class Meta:
-        model = Order
-        fields = "__all__"
-
-
 class OrderItemSerializer(serializers.ModelSerializer):
-    order = serializers.SerializerMethodField()
+    product = ProductSerializer()
 
     class Meta:
         model = OrderItem
-        fields = ["id", "quantity", "product", "status", "order"]
-        depth = 1
-
-    def get_order(self, obj):
-        # Check if 'include_order' was passed to the serializer
-        include_order = self.context.get("include_order", False)
-        if include_order:
-            return OrderSerializer2(obj.order, context=self.context).data
-        return None
-
-    def to_representation(self, instance):
-        rep = super().to_representation(instance)
-        # Remove 'order' if not included
-        if rep.get("order") is None:
-            rep.pop("order", None)
-        return rep
+        fields = ["id", "quantity", "product", "status"]
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    order_items = OrderItemSerializer(many=True)
+    user = userSerializer()
 
     class Meta:
         model = Order
-        fields = ["created_at", "id", "total", "order_items"]
-        depth = 1
-
-    # def create(self,data):
+        fields = ["created_at", "id", "total", "user"]
 
 
 class TypeSerializer(serializers.ModelSerializer):

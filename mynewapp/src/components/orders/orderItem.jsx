@@ -1,15 +1,14 @@
-import React, { useContext } from "react";
+
 import styles from "../../styles/pages/orders.module.css";
 import { Link } from "react-router-dom";
-import { format } from "date-fns";
-import OrderContext from "../../data/order-context";
+
 
 function OrderItem(props) {
-  const ctx = useContext(OrderContext);
+  // const ctx = useContext(OrderContext);
   return (
     <div className={styles["order-details-grid"]}>
       <div className={styles["product-image-container"]}>
-        <img src={`http://127.0.0.1:8000/${props.order.product.image}`} />
+        <img src={`${props.order.product.image}`} />
       </div>
 
       <div className={styles["product-details"]}>
@@ -27,7 +26,7 @@ function OrderItem(props) {
             className={styles["buy-again-icon"]}
             src="src/images/icons/buy-again.png"
           />
-          <span onClick={ctx.check} className={styles["buy-again-message"]}>
+          <span className={styles["buy-again-message"]}>
             Buy it again
           </span>
         </button>
