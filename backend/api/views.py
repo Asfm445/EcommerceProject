@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.db import transaction
 from rest_framework import generics, status, viewsets
 from rest_framework.authentication import SessionAuthentication
+from rest_framework.exceptions import ValidationError
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -19,7 +20,6 @@ from .models import (
     shop,
 )
 from .serializer import (
-    CartSerializer,
     CatagorySerializer,
     OrderItemSerializer,
     OrderSerializer,
@@ -73,50 +73,55 @@ class AddToCart(APIView):
         return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
-        with transaction.atomic():
-            data = request.data
-            if Cart.objects.filter(owner=request.user).exists():
-                cart = Cart.objects.get(owner=request.user)
-            else:
-                cart = Cart(owner=request.user)
-                cart.save()
-            if "quantity" in data:
-                quantity = data["quantity"]
-            else:
-                quantity = 1
-            if "productId" not in data:
-                return Response(
-                    {"nessage": "the data should contain product id"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        data = request.data
+        if Cart.objects.filter(owner=request.user).exists():
+            cart = Cart.objects.get(owner=request.user)
+        else:
+            cart = Cart(owner=request.user)
+            cart.save()
+        if "quantity" in data:
+            quantity = data["quantity"]
+        else:
+            quantity = 1
+        try:
+            quantity = int(quantity)
+        except (ValueError, TypeError):
+            raise ValidationError({"message": "invalid quantity"})
+        if quantity < 1:
+            raise ValidationError({"message": "invalid quantity"})
+        if "productId" not in data:
+            return Response(
+                {"message": "the data should contain product id"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-            if Product.objects.filter(id=data["productId"]).exists():
-                prod = Product.objects.get(id=data["productId"])
-                if CartItem.objects.filter(product=prod, cart=cart).exists():
-                    if prod.stock_quantity < quantity:
-                        return Response(
-                            {"message": "there is not enough stock"},
-                            status=status.HTTP_400_BAD_REQUEST,
-                        )
-                    cart_item = CartItem.objects.get(product=prod, cart=cart)
-                    cart_item.quantity = quantity
-                    cart_item.save()
-                    return Response(
-                        {"message": "cart is updated"}, status=status.HTTP_202_ACCEPTED
-                    )
+        if Product.objects.filter(id=data["productId"]).exists():
+            prod = Product.objects.get(id=data["productId"])
+            if CartItem.objects.filter(product=prod, cart=cart).exists():
                 if prod.stock_quantity < quantity:
                     return Response(
                         {"message": "there is not enough stock"},
                         status=status.HTTP_400_BAD_REQUEST,
                     )
-                cart_item = CartItem(product=prod, cart=cart, quantity=quantity)
+                cart_item = CartItem.objects.get(product=prod, cart=cart)
+                cart_item.quantity = quantity
                 cart_item.save()
-                return Response(status=status.HTTP_202_ACCEPTED)
+                return Response(
+                    {"message": "cart is updated"}, status=status.HTTP_202_ACCEPTED
+                )
+            if prod.stock_quantity < quantity:
+                return Response(
+                    {"message": "there is not enough stock"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            cart_item = CartItem(product=prod, cart=cart, quantity=quantity)
+            cart_item.save()
+            return Response(status=status.HTTP_202_ACCEPTED)
 
-            return Response(
-                {"message": "product does not exist"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        return Response(
+            {"message": "product does not exist"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
 
     def delete(self, request):
         data = request.data
@@ -140,7 +145,7 @@ class AddToCart(APIView):
             )
         return Response(
             {"message": "you don't have cart to delete from"},
-            status=status.HTTP_400_BAD_REQUEST,
+            status=status.HTTP_404_NOT_FOUND,
         )
 
 
@@ -169,16 +174,16 @@ class CreateListOrder(generics.ListCreateAPIView):
                         order_items.append(order_item)
                         order.total += i.quantity * i.product.price
                         i.delete()
+                # print(len(order_items))
                 if order_items:
                     OrderItem.objects.bulk_create(order_items)
+                else:
+                    raise ValidationError({"message": "your cart does not have items"})
                 order.save()
                 return Response(
                     {"message": "cart items ordered"}, status=status.HTTP_201_CREATED
                 )
-            return Response(
-                {"message": "you don't have cart to order from"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise ValidationError({"message": "you don't have cart to order from"})
 
 
 class orderItemForBuyer(generics.ListAPIView):
@@ -196,6 +201,16 @@ class orderItemForBuyer(generics.ListAPIView):
 
 
 class orderForSeller(generics.ListAPIView):
+    """
+    API view to list all orders for a seller's shop.
+
+    Requires authentication.
+    Query params:
+        - shop_id: ID of the shop to filter orders.
+    Returns:
+        - Paginated list of orders for the given shop.
+    """
+
     permission_classes = [IsAuthenticated]
     serializer_class = OrderSerializer
 
@@ -209,13 +224,26 @@ class orderForSeller(generics.ListAPIView):
 
 
 class orderItemForSeller(APIView):
+    """
+    API view to list and update order items for a seller's shop.
+
+    GET:
+        - Query params:
+            - shop_id: ID of the shop (required)
+            - order_id: ID of the order (optional, filters items by order)
+        - Returns paginated order items for the shop (optionally filtered by order).
+
+    PATCH:
+        - Request body must include 'id' of the order item to update.
+        - Partially updates the order item.
+    """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         shop_id = request.query_params.get("shop_id")
         order_id = request.query_params.get("order_id")
         queryset = OrderItem.objects.filter(product__shop__id=shop_id)
-        # print(order_id)
         if order_id:
             queryset = queryset.filter(order__id=order_id)
         paginator = PageNumberPagination()
@@ -241,6 +269,15 @@ class orderItemForSeller(APIView):
 
 
 class TypeListView(generics.ListAPIView):
+    """
+    API view to list all types for a given category.
+
+    Query params:
+        - id: ID of the category (from URL kwargs)
+    Returns:
+        - List of types for the given category.
+    """
+
     serializer_class = TypeSerializer
     permission_classes = [AllowAny]
     authentication_classes = [SessionAuthentication]
@@ -251,6 +288,13 @@ class TypeListView(generics.ListAPIView):
 
 
 class catagoryListView(generics.ListAPIView):
+    """
+    API view to list all categories.
+
+    Returns:
+        - List of all categories.
+    """
+
     serializer_class = CatagorySerializer
     permission_classes = [AllowAny]
 
@@ -259,6 +303,16 @@ class catagoryListView(generics.ListAPIView):
 
 
 class profile(APIView):
+    """
+    API view to get or create/update the user's profile.
+
+    GET:
+        - Returns the authenticated user's profile.
+
+    POST:
+        - Creates or updates the user's profile with provided data.
+    """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -283,6 +337,16 @@ class profile(APIView):
 
 
 class myshops(APIView):
+    """
+    API view to list or create shops for the authenticated user.
+
+    GET:
+        - Returns all shops owned by the user.
+
+    POST:
+        - Creates a new shop for the user with provided data.
+    """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -303,6 +367,14 @@ class myshops(APIView):
 
 
 class ProductViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing products.
+
+    - Lists products for the authenticated user (optionally filtered by shop).
+    - Allows creation, partial update, and deletion of products.
+    - Handles type and shop assignment logic.
+    """
+
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticated]
 
