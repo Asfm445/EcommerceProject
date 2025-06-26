@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
 from django.db import transaction
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import generics, status, viewsets
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.exceptions import ValidationError
@@ -45,6 +47,17 @@ class createUserView(generics.CreateAPIView):
 
 
 class productListView(generics.ListAPIView):
+    """
+    get:
+    List all products with stock > 0.
+
+    Optional query params:
+        - type_id: Filter products by type.
+
+    Returns:
+        - 200: List of products.
+    """
+
     serializer_class = ProductSerializer
     authentication_classes = [SessionAuthentication]
     permission_classes = [AllowAny]
@@ -58,14 +71,32 @@ class productListView(generics.ListAPIView):
 
 
 class AddToCart(APIView):
+    """
+    get:
+    Retrieve all items in the authenticated user's cart (paginated).
+
+    post:
+    Add a product to the cart or update its quantity.
+    Body params:
+        - productId (int, required)
+        - quantity (int, optional, default=1)
+
+    delete:
+    Remove a product from the cart.
+    Body params:
+        - productId (int, required)
+    """
+
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        """
+        Retrieve all items in the authenticated user's cart.
+        """
         if not Cart.objects.filter(owner=request.user).exists():
             return Response(
                 {"message": "cart does not exist"}, status=status.HTTP_404_NOT_FOUND
             )
-        # mycart = CartItem.objects.get(owner=request.user)s
         cartItems = CartItem.objects.filter(cart=request.user.cart).distinct()
         paginator = PageNumberPagination()
         paginated_qs = paginator.paginate_queryset(cartItems, request)
@@ -73,6 +104,9 @@ class AddToCart(APIView):
         return paginator.get_paginated_response(serializer.data)
 
     def post(self, request):
+        """
+        Add a product to the cart or update its quantity.
+        """
         data = request.data
         if Cart.objects.filter(owner=request.user).exists():
             cart = Cart.objects.get(owner=request.user)
@@ -124,6 +158,9 @@ class AddToCart(APIView):
         )
 
     def delete(self, request):
+        """
+        Remove a product from the cart.
+        """
         data = request.data
         if "productId" not in data:
             return Response(
@@ -150,13 +187,27 @@ class AddToCart(APIView):
 
 
 class CreateListOrder(generics.ListCreateAPIView):
+    """
+    get:
+    List all orders for the authenticated user.
+
+    post:
+    Create a new order from the user's cart.
+    """
+
     permission_classes = [IsAuthenticated]
     serializer_class = OrderSerializer
 
     def get_queryset(self):
+        """
+        List all orders for the authenticated user.
+        """
         return Order.objects.filter(user=self.request.user)
 
     def post(self, request):
+        """
+        Create a new order from the user's cart.
+        """
         with transaction.atomic():
             order = Order(user=request.user, total=0)
             order.save()
@@ -187,16 +238,26 @@ class CreateListOrder(generics.ListCreateAPIView):
 
 
 class orderItemForBuyer(generics.ListAPIView):
+    """
+    get:
+    List all order items for a specific order (buyer view).
+
+    Query params:
+        - order_id (int, required): The order to retrieve items for.
+    """
+
     permission_classes = [IsAuthenticated]
     serializer_class = OrderItemSerializer
 
     def get_queryset(self):
+        """
+        List all order items for a specific order.
+        """
         order_id = self.request.query_params.get("order_id")
         if not order_id:
             return Response(
                 {"message": "provide an order id"}, status=status.HTTP_400_BAD_REQUEST
             )
-
         return OrderItem.objects.filter(order__id=order_id)
 
 
@@ -386,44 +447,27 @@ class ProductViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(shop__id=shop_id)
         return queryset
 
+    @swagger_auto_schema(
+        operation_description="List all products for the authenticated user (optionally filtered by shop).",
+        manual_parameters=[
+            openapi.Parameter(
+                "shop_id",
+                openapi.IN_QUERY,
+                description="Shop ID to filter products",
+                type=openapi.TYPE_INTEGER,
+            )
+        ],
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
+    @swagger_auto_schema(
+        operation_description="Create a new product.",
+        request_body=ProductSerializer,
+        responses={201: ProductSerializer},
+    )
     def create(self, request, *args, **kwargs):
-        data = request.data
-        # Handle type and shop logic as before
-        if "typeId" in data:
-            try:
-                type_obj = Type.objects.get(id=data["typeId"])
-            except Type.DoesNotExist:
-                return Response(
-                    {"message": "type not found"}, status=status.HTTP_404_NOT_FOUND
-                )
-        elif "catagoryId" in data and "typeName" in data:
-            try:
-                type_catagory = catagory.objects.get(id=data["catagoryId"])
-                type_obj = Type.objects.create(
-                    catagory=type_catagory, name=data["typeName"]
-                )
-            except catagory.DoesNotExist:
-                return Response(
-                    {"message": "catagory does not exist"},
-                    status=status.HTTP_404_NOT_FOUND,
-                )
-        else:
-            return Response(
-                {"message": "you must provide type"}, status=status.HTTP_400_BAD_REQUEST
-            )
-
-        if "shop_id" in data and shop.objects.filter(id=data["shop_id"]).exists():
-            this_shop = shop.objects.get(id=data["shop_id"])
-        else:
-            return Response(
-                {"message": "shop not found"}, status=status.HTTP_404_NOT_FOUND
-            )
-
-        serializer = self.get_serializer(data=data)
-        if serializer.is_valid():
-            serializer.save(owner=request.user, type=type_obj, shop=this_shop)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return super().create(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
         data = request.data
