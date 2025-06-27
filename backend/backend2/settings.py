@@ -61,7 +61,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "drf_yasg",
 ]
-
+INSTALLED_APPS += ["cloudinary", "cloudinary_storage"]
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -154,3 +154,11 @@ CORS_ALLOWS_CREDENTIALS = True
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 MEDIA_ROOT = os.path.join(BASE_DIR, "media")
 MEDIA_URL = "media/"
+
+
+DEFAULT_FILE_STORAGE = "cloudinary_storage.storage.MediaCloudinaryStorage"
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": os.environ.get("CLOUD_NAME"),
+    "API_KEY": os.environ.get("CLOUD_API_KEY "),
+    "API_SECRET": os.environ.get("CLOUD_API_SECRET"),
+}
