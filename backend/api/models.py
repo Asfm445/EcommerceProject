@@ -1,11 +1,17 @@
 import os
 
+from cloudinary.uploader import destroy
 from django.contrib.auth.models import User
 from django.db import models
 
 
 def product_image_upload_path(instance, filename):
-    return f"images/{instance.type}/{filename}"
+    type_name = (
+        getattr(instance.type, "name", "unknown")
+        if hasattr(instance, "type") and instance.type
+        else "unknown"
+    )
+    return f"images/{type_name}/{filename}"
 
 
 class catagory(models.Model):
@@ -65,24 +71,23 @@ class Product(models.Model):
         return self.name
 
     def delete(self, *args, **kwargs):
-        # Delete the image file from the filesystem
-        if self.image:
-            if os.path.isfile(self.image.path):
-                os.remove(self.image.path)
+        # Let Cloudinary handle cleanup automatically
         super().delete(*args, **kwargs)
 
     def save(self, *args, **kwargs):
-        # Check if this is an update (i.e., not a new instance)
         if self.pk:
             try:
                 old_image = Product.objects.get(pk=self.pk).image
             except Product.DoesNotExist:
                 old_image = None
 
-            # If the image has changed, delete the old one
             if old_image and old_image != self.image:
-                if os.path.isfile(old_image.path):
-                    os.remove(old_image.path)
+                # Delete the old image from Cloudinary
+                public_id = (
+                    old_image.public_id if hasattr(old_image, "public_id") else None
+                )
+                if public_id:
+                    destroy(public_id)
 
         super().save(*args, **kwargs)
 

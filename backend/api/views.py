@@ -466,8 +466,46 @@ class ProductViewSet(viewsets.ModelViewSet):
         request_body=ProductSerializer,
         responses={201: ProductSerializer},
     )
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+    def create(self, request):
+        data = request.data
+        # Handle type and shop logic as before
+        if "typeId" in data:
+            try:
+                type_obj = Type.objects.get(id=data["typeId"])
+            except Type.DoesNotExist:
+                return Response(
+                    {"message": "type not found"}, status=status.HTTP_404_NOT_FOUND
+                )
+        elif "catagoryId" in data and "typeName" in data:
+            try:
+                type_catagory = catagory.objects.get(id=data["catagoryId"])
+                type_obj = Type.objects.create(
+                    catagory=type_catagory, name=data["typeName"]
+                )
+            except catagory.DoesNotExist:
+                return Response(
+                    {"message": "catagory does not exist"},
+                    status=status.HTTP_404_NOT_FOUND,
+                )
+        else:
+            return Response(
+                {"message": "you must provide type"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if "shop_id" in data and shop.objects.filter(id=data["shop_id"]).exists():
+            this_shop = shop.objects.get(id=data["shop_id"])
+        else:
+            return Response(
+                {"message": "shop not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = self.get_serializer(data=data)
+        if serializer.is_valid():
+            serializer.save(owner=request.user, type=type_obj, shop=this_shop)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # return super().create(request, *args, **kwargs)
 
     def partial_update(self, request, *args, **kwargs):
         data = request.data

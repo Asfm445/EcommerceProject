@@ -1,8 +1,20 @@
+import io
+
 from django.contrib.auth.models import User
+from django.core.files.uploadedfile import SimpleUploadedFile
+from PIL import Image
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 
 from .models import Cart, CartItem, Order, OrderItem, Product, Type, catagory, shop
+
+
+def generate_test_image():
+    file = io.BytesIO()
+    image = Image.new("RGB", (100, 100), "blue")  # 100x100 blue image
+    image.save(file, "JPEG")
+    file.seek(0)
+    return SimpleUploadedFile("test.jpg", file.read(), content_type="image/jpeg")
 
 
 class APITests(APITestCase):
@@ -73,20 +85,20 @@ class ProductManagementTests(APITests):
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
     def test_product_create_with_type_id(self):
-        """Test creating a product using an existing type ID."""
+        """Test creating a product using an existing type ID with real image upload."""
+        image = generate_test_image()
         data = {
             "name": "Samsung",
             "price": 500,
             "typeId": self.type.id,
             "shop_id": self.shop.id,
             "stock_quantity": 5,
+            "image": image,
         }
-        response = self.client.post("/api/myproducts/", data)
-        self.assertIn(
-            response.status_code, [status.HTTP_201_CREATED, status.HTTP_400_BAD_REQUEST]
-        )  # 400 if image required
-        if response.status_code == 400:
-            self.assertIn("image", response.data)
+        response = self.client.post("/api/myproducts/", data, format="multipart")
+        print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+        print(response.data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def test_product_create_with_new_type(self):
         """Test creating a product with a new type and category."""
